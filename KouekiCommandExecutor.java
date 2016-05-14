@@ -29,12 +29,14 @@ public class KouekiCommandExecutor implements CommandExecutor
 		case 1:
 			if(args[0].equalsIgnoreCase("start"))
 			{
+				//コンソールから実行不可に
 				if(!(sender instanceof Player))
 				{
 					sender.sendMessage(ChatColor.RED + "このコマンドはプレイヤーのみ使用可能です");
 					return true;
 				}
 
+				//パーミッションチェック
 				if(!sender.hasPermission("koueki.start"))
 				{
 					sender.sendMessage(ChatColor.RED + "権限がありません");
@@ -51,11 +53,13 @@ public class KouekiCommandExecutor implements CommandExecutor
 			}
 			if(args[0].equalsIgnoreCase("quit"))
 			{
+				//コンソールから(ry
 				if(!(sender instanceof Player))
 				{
 					sender.sendMessage(ChatColor.RED + "このコマンドはプレイヤーのみ使用可能です");
 					return true;
 				}
+				//パーミッション(ry
 				if(!sender.hasPermission("koueki.quit"))
 				{
 					sender.sendMessage(ChatColor.RED + "権限がありません");
@@ -72,6 +76,7 @@ public class KouekiCommandExecutor implements CommandExecutor
 			}
 			break;
 		case 2:
+			//パーミ(ry
 			if(args[0].equalsIgnoreCase("start"))
 			{
 				if(!(sender.hasPermission("koueki.start.others")))
@@ -94,6 +99,7 @@ public class KouekiCommandExecutor implements CommandExecutor
 			}
 			if(args[0].equalsIgnoreCase("start"))
 			{
+				//パ(ry
 				if(!(sender.hasPermission("koueki.start.others")))
 				{
 					sender.sendMessage(ChatColor.RED + "権限がありません");
