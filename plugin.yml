@@ -1,0 +1,63 @@
+name: koueki
+version: 0.46β
+description: 交易の交易のための交易プラグイン
+author: seiya0818
+website: seiya0818.jimdo.com/
+
+main: jp.seiya0818.Koueki
+database: false
+
+commands:
+  koueki:
+    description: 交易プラグイン系統のコマンド
+    usage: |
+           /<command> start - 交易を開始します。
+           /<command> quit - 交易を終了します。
+           /<command> start (player) - 交易を開始させます。
+           /<command> quit (player) - 交易を終了させます。
+    permission-message: 権限がありません。
+
+permissions:
+  koueki.*:
+    description: 交易のすべての権限を付与します。
+    children:
+      koueki.start: true
+      koueki.quit: true
+      koueki.help: true
+      koueki.sign: true
+      koueki.start.others: true
+      koueki.quit.others: true
+      koueki.create: true
+      koueki.delete: true
+      koueki.list: true
+      koueki.reload: true
+    default: op
+  koueki.admin:
+    description: 交易プラグインの運営権限
+    children:
+      koueki.sign: true
+      koueki.start.others: true
+      koueki.quit.others: true
+      koueki.create: true
+      koueki.delete: true
+      koueki.list: true
+      koueki.reload: true
+    default: op
+  koueki.start:
+    description: 交易モードに設定する権限を与えます。
+    default: true
+  koueki.quit:
+    description: 交易モードを終了する権限を与えます。
+    default: true
+  koueki.help:
+    description: ヘルプを表示します。
+    default: true
+  koueki.sign:
+    description: 看板を作成します。
+    default: op
+  koueki.start.others:
+    description: 交易モードに設定させる権限を与えます。
+    default: op
+  koueki.quit.others:
+    description: 交易モードを終了させる権限を与えます。
+    default: op
