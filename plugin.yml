@@ -1,8 +1,10 @@
 name: koueki
-version: 0.46β
+version: 0.53β
 description: 交易の交易のための交易プラグイン
 author: seiya0818
 website: seiya0818.jimdo.com/
+depend: [Vault]
+softdepend: [Vault]
 
 main: jp.seiya0818.Koueki
 database: false
