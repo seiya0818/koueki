@@ -10,6 +10,8 @@ import net.milkbowl.vault.economy.Economy;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -17,40 +19,45 @@ public class Process
 {
 	private static Koueki main;
 	private static Map<String, KouekiSetup> glist = new HashMap<String, KouekiSetup>();
-	private static Economy eco = null;
+	private static Economy econ = null;
+
+	public static boolean Init(Koueki k)
+	{
+		main = k;
+		if (!setupEconomy())
+		{
+			main.getLogger().warning(Koueki.LoggerPrefix + "Vaultや経済プラグインが導入されていません。");
+			main.getServer().getPluginManager().disablePlugin(main);
+			return false;
+		}
+		new BukkitRunnable()
+		{
+			public void run() {}
+		}.runTaskLater(main, 1L);
+		loadglist();
+		return true;
+	}
+
+	private static boolean setupEconomy()
+	{
+		if(main.getServer().getPluginManager().getPlugin("Vault") == null)
+		{
+			return false;
+		}
+		RegisteredServiceProvider<Economy> rsp = main.getServer().getServicesManager().getRegistration(Economy.class);
+		if (rsp == null)
+		{
+			return false;
+		}
+		econ = (Economy)rsp.getProvider();
+		return econ != null;
+	}
 	
-	  public static boolean Init(Koueki k)
-	  {
-	    main = k;
-	    if (!setupEconomy())
-	    {
-	      main.getLogger().warning(Koueki.LoggerPrefix + "Vaultや経済プラグインが導入されていません。");
-	      main.getServer().getPluginManager().disablePlugin(main);
-	      return false;
-	    }
-	    new BukkitRunnable()
-	    {
-	      public void run() {}
-	    }.runTaskLater(main, 1L);
-	    loadglist();
-	    return true;
-	  }
-	  
-	  private static boolean setupEconomy()
-	  {
-		  if(main.getServer().getPluginManager().getPlugin("Vault") == null)
-		  {
-			  return false;
-		  }
-		  RegisteredServiceProvider<Economy> rsp = main.getServer().getServicesManager().getRegistration(Economy.class);
-		  if (rsp == null)
-		  {
-			  return false;
-		  }
-		  eco = (Economy)rsp.getProvider();
-		  return eco != null;
-	  }
-	
+	public static Economy getEconomy()
+	{
+		return econ;
+	}
+
 	public static void loadglist()
 	{
 		glist.clear();
@@ -76,17 +83,32 @@ public class Process
 			}
 		}
 	}
-	
+
+	public static void setItemMeta(ItemStack item, String display, ArrayList<String> lore)
+	{
+		ItemMeta meta = item.getItemMeta();
+		if (meta != null)
+		{
+			if (display != null) {
+				meta.setDisplayName(display);
+			}
+			if (lore != null) {
+				meta.setLore(lore);
+			}
+			item.setItemMeta(meta);
+		}
+	}
+
 	public static Koueki getMain()
 	{
 		return main;
 	}
-	
+
 	public static KouekiSetup getgoods(String sid)
 	{
 		return (KouekiSetup)glist.get(sid);
 	}
-	
+
 	public static ArrayList<KouekiSetup> getgoodslist()
 	{
 		ArrayList<KouekiSetup> list = new ArrayList<KouekiSetup>();
@@ -97,7 +119,7 @@ public class Process
 		}
 		return list;
 	}
-	
+
 	public static void putgoods(String sid, KouekiSetup goods)
 	{
 		glist.put(sid, goods);

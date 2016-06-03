@@ -7,8 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import net.md_5.bungee.api.ChatColor;
-
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -19,90 +18,52 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 
-public class KouekiSetup
+public class SaveRestoreInventory
 {
-	private String sid;
-	private String name;
-	private String price;
-	private String minp;
-	private String maxp;
-	private int point;
-	public static final char COLOR_KEY = '&';
-	
-	public KouekiSetup(String sid)
-	{
-		setSID(sid);
-		setName("新規交易品");
-		setprice("80");
-		setminprice("100");
-		setmaxprice("200");
-		setpoint( 10 );
+	private static int tempLevel;
+	private static float tempExp;
 
-		saveConfig();
-	}
-	
-	public KouekiSetup(String sid, FileConfiguration conf)
+	public static File getInventoryFile(Player player)
 	{
-		setSID(sid);
-		loadConfig(conf);
+		File dafl = Process.getMain().getDataFolder();
+		if (!dafl.exists())
+		{
+			dafl.mkdir();
+		}
+		File plyfl = new File(dafl, "inventory");
+		if (!plyfl.exists())
+		{
+			plyfl.mkdir();
+			setupInventoryConfig(player);
+		}
+		return new File(plyfl, player.getName() + ".yml");
 	}
-	
-	public void saveConfig()
+
+	public static FileConfiguration getInventoryConfig(Player player)
 	{
-		FileConfiguration conf = getConfig();
-		conf.set("Name", this.name);
-		conf.set("Price", this.price);
-		conf.set("Min-price", this.minp);
-		conf.set("Max-price", this.maxp);
-		conf.set("Point", this.point);
+		return YamlConfiguration.loadConfiguration(getInventoryFile(player));
+	}
+
+	public static void setupInventoryConfig(Player player)
+	{
+		FileConfiguration conf = getInventoryConfig(player);
+		conf.set("Point", 0);
 		try
 		{
-			conf.save(getFile());
+			conf.save(getInventoryFile(player));
 		}
 		catch(IOException e)
 		{
-			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグの保存に失敗しました。" + this.sid);
+			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグの保存に失敗しました。" + player);
+			player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED +
+					"エラーが発生しました。管理人に報告してください。");
 		}
 	}
-	
-	public void delete()
-	{
-		getFile().delete();
-		Process.removegoods(this.sid);
-	}
-	
-	  public File getFile()
-	  {
-	    File dafl = Process.getMain().getDataFolder();
-	    if (!dafl.exists())
-	    {
-	      dafl.mkdir();
-	    }
-	    File gdsfl = new File(dafl, "goods");
-	    if (!gdsfl.exists())
-	    {
-	      gdsfl.mkdir();
-	    }
-	    return new File(gdsfl, this.sid + ".yml");
-	  }
-	
-	public FileConfiguration getConfig()
-	{
-	    return YamlConfiguration.loadConfiguration(getFile());
-	}
-	
-	private void loadConfig(FileConfiguration conf)
-	{
-		setName(conf.getString("Name"));
-		setprice(conf.getString("Price"));
-		setminprice(conf.getString("Min-price"));
-		setmaxprice(conf.getString("Max-price"));
-		setpoint(conf.getInt("Point"));
-	}
 
-	public void saveKouekiInventory(Player player)
+	public static void savePlayerInventory(Player player)
 	{
-		FileConfiguration conf = getConfig();
+		//アイテムをconfigに保存
+		FileConfiguration conf = getInventoryConfig(player);
 		PlayerInventory inv = player.getInventory();
 		for(int i = 0; i < 36; i++)
 		{
@@ -142,19 +103,35 @@ public class KouekiSetup
 
 		conf.set("armor.boots", inv.getBoots() != null ?
 				inv.getBoots().getType().toString().toLowerCase() : "air");
+		//インベントリ・防具の消去
+		player.getInventory().clear();
+		player.getInventory().setArmorContents(new ItemStack[]
+				{
+				new ItemStack(Material.AIR),
+				new ItemStack(Material.AIR),
+				new ItemStack(Material.AIR),
+				new ItemStack(Material.AIR),
+				});
+
+		//経験値の保存・消去
+		tempLevel = player.getLevel();
+		tempExp = player.getExp();
+		player.setLevel(0);
+		player.setExp(0);
 		try
 		{
-			conf.save(getFile());
+			conf.save(getInventoryFile(player));
 		}
 		catch(IOException e)
 		{
-			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグファイルの保存に失敗しました。" + this.sid);
+			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグファイルの保存に失敗しました。" +
+					player.getName());
 		}
 	}
 	
-	public void giveKouekiInventory(Player player)
+	public static void restorePlayerInventory(Player player)
 	{
-		FileConfiguration conf = getConfig();
+		FileConfiguration conf = getInventoryConfig(player);
 		ConfigurationSection s = conf.getConfigurationSection("items");
 		for(String str : s.getKeys(false))
 		{
@@ -196,77 +173,13 @@ public class KouekiSetup
 		player.getInventory().setChestplate(new ItemStack(chestplate != null ? Material.matchMaterial(chestplate) : Material.AIR));
 		player.getInventory().setLeggings(new ItemStack(leggings != null ? Material.matchMaterial(leggings) : Material.AIR));
 		player.getInventory().setBoots(new ItemStack(boots != null ? Material.matchMaterial(boots) : Material.AIR));
+		
+		// レベルと経験値の復帰
+		player.setLevel(tempLevel);
+		player.setExp(tempExp);
+		
 		player.updateInventory();
-	}
-	
-	public void setName(String sid, String args)
-	{
-		FileConfiguration conf = getConfig();
-		conf.set("Name", args);
-	}
-	
-	public void setSID(String sid)
-	{
-		this.sid = sid;
-	}
-	
-	public void setName(String name)
-	{
-		this.name = name;
-	}
-	
-	public void setprice(String price)
-	{
-		this.price = price;
-	}
-	
-	public void setminprice(String minp)
-	{
-		this.minp = minp;
-	}
-	
-	public void setmaxprice(String maxp)
-	{
-		this.maxp = maxp;
-	}
-	
-	public void setpoint(int point)
-	{
-		this.point = point;
-	}
-	
-	public String getSID()
-	{
-		return this.sid;
-	}
-	
-	public String getName()
-	{
-		return this.name;
-	}
-	
-	
-	public String getprice()
-	{
-		return this.price;
-	}
-	
-	public String getminp()
-	{
-		return this.minp;
-	}
-	
-	public String getmaxp()
-	{
-		return this.maxp;
-	}
-	
-	public int getpoint()
-	{
-		return this.point;
-	}
-	
-	public static void setupgoods (Player player, String koueki)
-	{
+		
+		getInventoryFile(player).delete();
 	}
 }

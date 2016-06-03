@@ -33,21 +33,37 @@ public class KouekiCommandExecutor implements CommandExecutor
 			{
 				sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "ページ数を入力してください。");
 			}
+			//交易品リロードコマンド
 			else if(args[0].equalsIgnoreCase("reload"))
 			{
 				Process.loadglist();
 				sender.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "交易品をリロードしました。");
 				return true;
 			}
-			//それ以外ならhelp表示
-			else if(!args[0].equalsIgnoreCase("start")
-					|| !args[0].equalsIgnoreCase("quit")
-					|| !args[0].equalsIgnoreCase("list")
-					|| !args[0].equalsIgnoreCase("reload"))
+			//ポイント表示コマンド
+			if(args[0].equalsIgnoreCase("point"))
 			{
-				if(sender.hasPermission("koueki.help"));
+				if(!sender.hasPermission("koueki.displaypoint"))
 				{
-					KouekiSystem.PlayerCommands(sender);
+					KouekiSystem.HasnotPermissionMsg(sender);
+				}
+				if(!(sender instanceof Player))
+				{
+					KouekiSystem.ConsoleMessage(sender);
+				}
+				else
+				{
+					Player player = (Player) sender;
+					KouekiSystem.DisplayPoint(player);
+				}
+			}
+			//それ以外ならhelp表示
+			else
+			{
+				KouekiSystem.PlayerCommands(sender);
+				if(sender.hasPermission("koueki.adminhelp"));
+				{
+					KouekiSystem.AdminCommands(sender);
 				}
 				return true;
 			}
@@ -67,7 +83,7 @@ public class KouekiCommandExecutor implements CommandExecutor
 					}
 					else if(sender.hasPermission("koueki.info"))
 					{
-						KouekiSystem.KouekiTest(sender, g);
+						KouekiSystem.KouekiInfo(sender, g);
 					}
 				}
 				else
@@ -124,57 +140,94 @@ public class KouekiCommandExecutor implements CommandExecutor
 				}
 				return true;
 			}
-			//交易品一覧表示コマンド
+			if (args[0].equalsIgnoreCase("setkit"))
 			{
-				if (args[0].equalsIgnoreCase("list"))
+				KouekiSetup g = Process.getgoods(args[1]);
+				if(!sender.hasPermission("koueki.setitem"))
 				{
-					if(!sender.hasPermission("koueki.list"))
+					KouekiSystem.HasnotPermissionMsg(sender);
+				}
+				else if(!(sender instanceof Player))
+				{
+					KouekiSystem.ConsoleMessage(sender);
+				}
+				else if(g == null)
+				{
+					sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + args[1] +"は存在しません。");
+				}
+				else
+				{
+					Player player = (Player) sender;
+					g.saveKouekiInventory(player);
+					player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "交易インベントリを設定しました。");
+				}
+				return true;
+			}
+			//他のプレイヤーのポイント表示
+			if(args[0].equalsIgnoreCase("point"))
+			{
+				if(!sender.hasPermission("koueki.displaypoint.others"))
+				{
+					KouekiSystem.HasnotPermissionMsg(sender);
+				}
+				if(!(sender instanceof Player))
+				{
+					KouekiSystem.ConsoleMessage(sender);
+				}
+				else
+				{
+					Player target = getPlayer(args[2]);
+					KouekiSystem.DisplayPoint(target);
+				}
+			}
+			//交易品一覧表示コマンド
+			if (args[0].equalsIgnoreCase("list"))
+			{
+				if(!sender.hasPermission("koueki.list"))
+				{
+					KouekiSystem.HasnotPermissionMsg(sender);
+				}
+				else
+				{
+					try
 					{
-						KouekiSystem.HasnotPermissionMsg(sender);
-					}
-					if(sender.hasPermission("koueki.list"))
-					{
-						try
+						int page = Integer.parseInt(args[1]);
+						int maxpage = Process.getgoodslist().size() / 9;
+						if (Process.getgoodslist().size() % 9 != 0)
 						{
-							int page = Integer.parseInt(args[1]);
-							int maxpage = Process.getgoodslist().size() / 9;
-							if (Process.getgoodslist().size() % 9 != 0)
+							maxpage++;
+						}
+						if ((page < 1) || (page > maxpage))
+						{
+							sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED +
+									"指定されたページ数が見つかりませんでした。");
+							return true;
+						}
+						if (Process.getgoodslist().size() > 0)
+						{
+							sender.sendMessage(Koueki.PlayerPrefix + ChatColor.GOLD + "交易品の一覧を表示します。");
+							for (int i = 9 * page - 9; i < page * 9; i++)
 							{
-								maxpage++;
-							}
-							if ((page < 1) || (page > maxpage))
-							{
-								sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED +
-										"指定されたページ数が見つかりませんでした。");
-								return true;
-							}
-							if (Process.getgoodslist().size() > 0)
-							{
-								sender.sendMessage(Koueki.PlayerPrefix + ChatColor.GOLD + "交易品一覧");
-								for (int i = 9 * page - 9; i < page * 9; i++)
+								if (Process.getgoodslist().size() > i)
 								{
-									if (Process.getgoodslist().size() > i)
-									{
-										sender.sendMessage(Koueki.PlayerPrefix +
-												ChatColor.RED +"[ID] " + ChatColor.RESET +
-												((KouekiSetup)Process.getgoodslist().get(i)).getSID()
-												+ ChatColor.YELLOW +" [交易品名] " + ChatColor.RESET +
-												((KouekiSetup)Process.getgoodslist().get(i)).getName());
-									}
+									sender.sendMessage(ChatColor.RED +"[ID] " + ChatColor.RESET +
+											((KouekiSetup)Process.getgoodslist().get(i)).getSID()
+											+ ChatColor.YELLOW +" [交易品名] " + ChatColor.RESET +
+											((KouekiSetup)Process.getgoodslist().get(i)).getName());
 								}
 							}
-							else
-							{
-								sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "交易品が一つも作成されていません。");
-							}
 						}
-						catch (Exception e)
+						else
 						{
-							sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "エラーが発生しました。");
+							sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "交易品が一つも作成されていません。");
 						}
 					}
-					return true;
+					catch (Exception e)
+					{
+						sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "エラーが発生しました。");
+					}
 				}
+				return true;
 			}
 			//交易開始コマンド
 			if(args[0].equalsIgnoreCase("start"))
@@ -235,13 +288,13 @@ public class KouekiCommandExecutor implements CommandExecutor
 			//それ以外ならhelp表示
 			else
 			{
-				if(sender.hasPermission("koueki.help"))
+				KouekiSystem.PlayerCommands(sender);
+				if(sender.hasPermission("koueki.adminhelp"));
 				{
-					KouekiSystem.PlayerCommands(sender);
-					return true;
+					KouekiSystem.AdminCommands(sender);
 				}
+				return true;
 			}
-			break;
 			
 		case 3:
 			//他のプレイヤーの交易モード開始
@@ -279,6 +332,25 @@ public class KouekiCommandExecutor implements CommandExecutor
 				}
 				return true;
 			}
+			if(args[0].equalsIgnoreCase("setname"))
+			{
+				KouekiSetup g = Process.getgoods(args[1]);
+				if(!sender.hasPermission("koueki.setname"))
+				{
+					KouekiSystem.HasnotPermissionMsg(sender);
+				}
+				else if(g == null)
+				{
+					sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + args[1] +"は存在しません。");
+				}
+				else
+				{
+					String sid = g.getSID();
+					g.setName(sid, args[2]);
+					sender.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "名前を変更しました。");
+				}
+				return true;
+			}
 			//それ以外ならhelp表示
 			else
 			{
@@ -288,12 +360,15 @@ public class KouekiCommandExecutor implements CommandExecutor
 				}
 				return true;
 			}
-			break;
 		//それ以外のパラメータ数ならhelp表示
 		default:
 			if(sender.hasPermission("koueki.help"))
 			{
 				KouekiSystem.PlayerCommands(sender);
+				if(sender.hasPermission("koueki.adminhelp"));
+				{
+					KouekiSystem.AdminCommands(sender);
+				}
 				return true;
 			}
 		}
