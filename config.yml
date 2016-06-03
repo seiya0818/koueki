@@ -1,3 +1,6 @@
-version: 0.2
+version: 0.3
 
 Anti-Change-GameMode: true
+
+Money-Unit: sei
+Point-Unit: DC
