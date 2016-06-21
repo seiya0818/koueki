@@ -6,8 +6,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import jp.seiya0818.KouekiPost.PostProcess;
+import net.md_5.bungee.api.ChatColor;
 import net.milkbowl.vault.economy.Economy;
 
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
@@ -35,6 +38,7 @@ public class Process
 			public void run() {}
 		}.runTaskLater(main, 1L);
 		loadglist();
+		PostProcess.loadplist();
 		return true;
 	}
 
@@ -52,7 +56,7 @@ public class Process
 		econ = (Economy)rsp.getProvider();
 		return econ != null;
 	}
-	
+
 	public static Economy getEconomy()
 	{
 		return econ;
@@ -120,10 +124,52 @@ public class Process
 		return list;
 	}
 
+	public static void GoodsList(CommandSender sender, String args)
+	{
+		try
+		{
+			int page = Integer.parseInt(args);
+			int maxpage = Process.getgoodslist().size() / 9;
+			if (Process.getgoodslist().size() % 9 != 0)
+			{
+				maxpage++;
+			}
+			if ((page < 1) || (page > maxpage))
+			{
+				sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED +
+						"指定されたページ数が見つかりませんでした。");
+				return;
+			}
+			if (Process.getgoodslist().size() > 0)
+			{
+				sender.sendMessage(Koueki.PlayerPrefix + ChatColor.GOLD + "交易品の一覧を表示します。");
+				for (int i = 9 * page - 9; i < page * 9; i++)
+				{
+					if (Process.getgoodslist().size() > i)
+					{
+						sender.sendMessage(ChatColor.RED +"[ID] " + ChatColor.RESET +
+								((KouekiSetup)Process.getgoodslist().get(i)).getSID()
+								+ ChatColor.YELLOW +" [交易品名] " + ChatColor.RESET +
+								((KouekiSetup)Process.getgoodslist().get(i)).getName());
+					}
+				}
+			}
+			else
+			{
+				sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "交易品が一つも作成されていません。");
+			}
+		}
+		catch (Exception e)
+		{
+			sender.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "エラーが発生しました。");
+		}
+	}
+
 	public static void putgoods(String sid, KouekiSetup goods)
 	{
 		glist.put(sid, goods);
 	}
+
 	public static void removegoods(String sid)
 	{
 		glist.remove(sid);

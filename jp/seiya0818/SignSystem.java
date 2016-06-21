@@ -1,5 +1,9 @@
 package jp.seiya0818;
 
+import jp.seiya0818.KouekiPost.PostProcess;
+import jp.seiya0818.KouekiPost.PostSetup;
+import jp.seiya0818.KouekiPriceFluctuation.PriceSystem;
+import jp.seiya0818.KouekiSystem.KouekiSystem;
 import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.Material;
@@ -11,14 +15,22 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.metadata.MetadataValue;
 
 public class SignSystem implements Listener
-{	
+{
+
 	public SignSystem()
 	{
 		Process.getMain().getServer().getPluginManager().registerEvents(this, Process.getMain());
 	}
-	
+
+	String signt = ChatColor.GOLD + "[" + ChatColor.RED + "交易" + ChatColor.GOLD + "]";
+	String start = ChatColor.GREEN + "" + ChatColor.BOLD + "START";
+	String quit = ChatColor.RED + "" + ChatColor.BOLD + "Quit";
+	String menu = ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + "Menu";
+	String market = ChatColor.DARK_BLUE + "" + ChatColor.BOLD + "Market";
+
 	@EventHandler
 	public void ClickSign(PlayerInteractEvent e)
 	{
@@ -33,50 +45,145 @@ public class SignSystem implements Listener
 			return;
 		Sign thisSign = (Sign)clickdblock.getState();
 		String[] lines = thisSign.getLines();
-		if(!lines[0].equalsIgnoreCase(Koueki.PlayerPrefix))
+		if(!lines[0].equalsIgnoreCase(signt))
 			return;
 		{
-			KouekiSetup g = Process.getgoods(lines[2]);
-			if(lines[1].equals("START"))
+			if(lines[1].equalsIgnoreCase(start))
 			{
+				KouekiSetup g = Process.getgoods(lines[2]);
 				KouekiSystem.StartKoueki(player, g);
 			}
-			if(lines[1].equals("QUIT"))
+			else if(lines[1].equalsIgnoreCase(quit))
 			{
-				KouekiSystem.QuitKoueki(player, g);
+				if(!player.hasMetadata(KouekiSystem.KouekiMeta))
+				{
+					player.sendMessage("");
+					player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "交易中ではありません");
+					player.sendMessage("");
+				}
+				else
+				{
+					for(MetadataValue meta : player.getMetadata(KouekiSystem.KouekiMeta))
+					{
+						KouekiSetup gds = (KouekiSetup) meta.value();
+						PostSetup p = PostProcess.getpost(lines[2]);
+						KouekiSystem.QuitKoueki(player, gds, p);
+					}
+				}
+			}
+			else if(lines[1].equalsIgnoreCase(menu))
+			{
+				PostSetup p = PostProcess.getpost(lines[2]);
+				KouekiGUI.OpenKGUI(player, p);
+			}
+			else if(lines[1].equalsIgnoreCase(market))
+			{
+				if(!player.hasMetadata(KouekiSystem.KouekiMeta))
+				{
+					PriceSystem.showAllPrice(player);
+				}
+				if(player.hasMetadata(KouekiSystem.KouekiMeta))
+				{
+					for(MetadataValue meta : player.getMetadata(KouekiSystem.KouekiMeta))
+					{
+						KouekiSetup g = (KouekiSetup) meta.value();
+						PriceSystem.showPrice(player, g);
+					}
+				}
 			}
 		}
 	}
-	
-		@EventHandler
-		public void onSignCreate(SignChangeEvent event)
+
+	@EventHandler
+	public void onSignCreate(SignChangeEvent e)
+	{
+		if (!"[Koueki]".equalsIgnoreCase(e.getLine(0)))
 		{
-			if (!"[Koueki]".equalsIgnoreCase(event.getLine(0)))
-				return;
-			Player player = event.getPlayer();
-			
-			if ("".equals(event.getLine(1)))
+			return;
+		}
+		else
+		{
+			Player player = e.getPlayer();
+			if(!player.hasPermission("koueki.edit"))
 			{
-				player.sendMessage(Koueki.PlayerPrefix + ChatColor.GOLD +"「start」" + ChatColor.GOLD + "「quit」" + ChatColor.RED + "を入力してください");
-				event.setCancelled(true);
-				return;
+				KouekiMessages.HasnotPermissionMsg(player);
 			}
-			if (player.hasPermission("koueki.sign"))
+			else
 			{
-				if("start".equals(event.getLine(1)))
+				if("start".equals(e.getLine(1)))
 				{
-					event.setLine(0, Koueki.PlayerPrefix);
-					event.setLine(1, "START");
-					event.setLine(3, ChatColor.DARK_BLUE + "右クリックで交易開始");
-					player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "開始看板を作成しました。右クリックで遊べます。");
+					KouekiSetup g = Process.getgoods(e.getLine(2));
+					if(g == null)
+					{
+						KouekiMessages.NoGoodsMsg(player, e.getLine(2));
+						e.setCancelled(true);
+						e.getBlock().breakNaturally();
+					}
+					else
+					{
+						if (player.hasPermission("koueki.sign"))
+						{
+							e.setLine(0, signt);
+							e.setLine(1, start);
+							e.setLine(2, g.getSID());
+							e.setLine(3, ChatColor.DARK_BLUE + "値段: " + g.getprice());
+							player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "開始看板を作成しました。右クリックで開始します。");
+						}
+					}
 				}
-				if("quit".equals(event.getLine(1)))
+				else if("menu".equals(e.getLine(1)))
 				{
-					event.setLine(0, Koueki.PlayerPrefix);
-					event.setLine(1, "QUIT");
-					event.setLine(3, ChatColor.DARK_BLUE + "右クリックで交易終了");
-					player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "終了看板を作成しました。右クリックで遊べます。");
+					PostSetup p = PostProcess.getpost(e.getLine(2));
+					if(p == null)
+					{
+						KouekiMessages.NoGoodsMsg(player, e.getLine(2));
+						e.setCancelled(true);
+						e.getBlock().breakNaturally();
+					}
+					else
+					{
+						if (player.hasPermission("koueki.sign"))
+						{
+							e.setLine(0, signt);
+							e.setLine(1, menu);
+							e.setLine(2, p.getSID());
+							e.setLine(3, ChatColor.BLUE + "");
+							player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "メニュー看板を作成しました。右クリックでGUIを開きます。");
+						}
+					}
+				}
+				else if("quit".equals(e.getLine(1)))
+				{
+					PostSetup p = PostProcess.getpost(e.getLine(2));
+					if(p == null)
+					{
+						KouekiMessages.NoGoodsMsg(player, e.getLine(2));
+						e.setCancelled(true);
+						e.getBlock().breakNaturally();
+					}
+					else
+					{
+						e.setLine(0, signt);
+						e.setLine(1, quit);
+						e.setLine(3, ChatColor.DARK_BLUE + "右クリックで交易終了");
+						player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "終了看板を作成しました。右クリックで終了します。");
+					}
+				}
+				else if("market".equals(e.getLine(1)))
+				{
+					e.setLine(0, signt);
+					e.setLine(1, market);
+					e.setLine(3, ChatColor.DARK_BLUE + "右クリックで取引情報表示");
+					player.sendMessage(Koueki.PlayerPrefix + ChatColor.GREEN + "価格看板を作成しました。右クリックで表示します。");
+				}
+				else
+				{
+					player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "行動を指定してください。");
+					e.setCancelled(true);
+					e.getBlock().breakNaturally();
+					return;
 				}
 			}
 		}
 	}
+}

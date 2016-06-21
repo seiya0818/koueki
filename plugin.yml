@@ -1,5 +1,5 @@
 name: koueki
-version: 0.75β
+version: 1.38β
 description: 交易の交易のための交易プラグイン
 author: seiya0818
 website: seiya0818.jimdo.com/
@@ -20,20 +20,6 @@ commands:
     permission-message: 権限がありません。
 
 permissions:
-  koueki.*:
-    description: 交易のすべての権限を付与します。
-    children:
-      koueki.start: true
-      koueki.quit: true
-      koueki.help: true
-      koueki.sign: true
-      koueki.start.others: true
-      koueki.quit.others: true
-      koueki.create: true
-      koueki.delete: true
-      koueki.list: true
-      koueki.reload: true
-    default: op
   koueki.admin:
     description: 交易プラグインの運営権限
     children:
@@ -51,9 +37,12 @@ permissions:
   koueki.start:
     description: 交易モードに設定する権限を与えます。
     default: true
+  koueki.stop:
+    description: 交易モードを強制終了する権限を与えます。
+    default: op
   koueki.quit:
     description: 交易モードを終了する権限を与えます。
-    default: true
+    default: op
   koueki.help:
     description: ヘルプを表示します。
     default: true
@@ -84,4 +73,3 @@ permissions:
   koueki.adminhelp:
     description: 運営用の交易ヘルプを表示します。
     default: op
-    

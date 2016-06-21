@@ -1,6 +1,12 @@
-version: 0.3
+version: 0.4
 
 Anti-Change-GameMode: true
 
 Money-Unit: sei
+
 Point-Unit: DC
+
+Use-ChangePaying: false
+
+Increase-Paying-Per300blocks: 1.2
+

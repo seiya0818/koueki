@@ -23,38 +23,35 @@ public class KouekiSetup
 {
 	private String sid;
 	private String name;
-	private String price;
-	private String minp;
-	private String maxp;
+	private String post;
+	private int price;
 	private int point;
+	private String GUIitem;
 	public static final char COLOR_KEY = '&';
-	
+
 	public KouekiSetup(String sid)
 	{
 		setSID(sid);
-		setName("新規交易品");
-		setprice("80");
-		setminprice("100");
-		setmaxprice("200");
-		setpoint( 10 );
+		setname("新規交易品");
+		setprice(1000);
+		setpoint(10);
 
 		saveConfig();
 	}
-	
+
 	public KouekiSetup(String sid, FileConfiguration conf)
 	{
 		setSID(sid);
 		loadConfig(conf);
 	}
-	
+
 	public void saveConfig()
 	{
 		FileConfiguration conf = getConfig();
 		conf.set("Name", this.name);
 		conf.set("Price", this.price);
-		conf.set("Min-price", this.minp);
-		conf.set("Max-price", this.maxp);
 		conf.set("Point", this.point);
+		conf.set("Post", this.post);
 		try
 		{
 			conf.save(getFile());
@@ -64,13 +61,13 @@ public class KouekiSetup
 			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグの保存に失敗しました。" + this.sid);
 		}
 	}
-	
+
 	public void delete()
 	{
 		getFile().delete();
 		Process.removegoods(this.sid);
 	}
-	
+
 	  public File getFile()
 	  {
 	    File dafl = Process.getMain().getDataFolder();
@@ -85,19 +82,60 @@ public class KouekiSetup
 	    }
 	    return new File(gdsfl, this.sid + ".yml");
 	  }
-	
+
 	public FileConfiguration getConfig()
 	{
 	    return YamlConfiguration.loadConfiguration(getFile());
 	}
-	
+
 	private void loadConfig(FileConfiguration conf)
 	{
-		setName(conf.getString("Name"));
-		setprice(conf.getString("Price"));
-		setminprice(conf.getString("Min-price"));
-		setmaxprice(conf.getString("Max-price"));
+		setname(conf.getString("Name"));
+		setprice(conf.getInt("Price"));
 		setpoint(conf.getInt("Point"));
+		setpost(conf.getString("Post"));
+		setGUIItem(conf.getString("GUIItem"));
+	}
+
+	public static void saveItem(Player player, KouekiSetup g)
+	{
+		FileConfiguration conf = g.getConfig();
+		if(player.getItemInHand() != null)
+		{
+			if(!player.getItemInHand().getType().equals(Material.AIR))
+			{
+				ItemStack item = player.getItemInHand();
+				String name = item.getType().toString();
+				int dur = item.getDurability();
+				String string = name + ":" + dur;
+				conf.set("GUIItem", string);
+				g.save(conf);
+				g.setGUIItem(string);
+				return;
+			}
+			player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "アイテムを手に持ってください。");
+			return;
+		}
+		player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "アイテムを手に持ってください。");
+		return;
+	}
+
+	public static boolean checkItemInHand(Player player)
+	{
+		if(player.getItemInHand() == null)
+		{
+			player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "アイテムを手に持ってください。");
+			return false;
+		}
+		if(player.getItemInHand().getType().equals(Material.AIR))
+		{
+			player.sendMessage(Koueki.PlayerPrefix + ChatColor.RED + "アイテムを手に持ってください。");
+			return false;
+		}
+		else
+		{
+			return true;
+		}
 	}
 
 	public void saveKouekiInventory(Player player)
@@ -142,16 +180,9 @@ public class KouekiSetup
 
 		conf.set("armor.boots", inv.getBoots() != null ?
 				inv.getBoots().getType().toString().toLowerCase() : "air");
-		try
-		{
-			conf.save(getFile());
-		}
-		catch(IOException e)
-		{
-			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグファイルの保存に失敗しました。" + this.sid);
-		}
+		save(conf);
 	}
-	
+
 	public void giveKouekiInventory(Player player)
 	{
 		FileConfiguration conf = getConfig();
@@ -169,7 +200,7 @@ public class KouekiSetup
 			int amount = conf.getInt(string + "amount");
 			ItemStack is = new ItemStack(Material.matchMaterial(type.toUpperCase()), amount);
 			ItemMeta im = is.getItemMeta();
-			
+
 			if(im == null)
 				continue;
 			if(name != null)
@@ -198,75 +229,92 @@ public class KouekiSetup
 		player.getInventory().setBoots(new ItemStack(boots != null ? Material.matchMaterial(boots) : Material.AIR));
 		player.updateInventory();
 	}
-	
-	public void setName(String sid, String args)
+
+	public void setName(String name)
 	{
 		FileConfiguration conf = getConfig();
-		conf.set("Name", args);
+		conf.set("Name", name);
+		save(conf);
 	}
-	
+
+	public void setPost(String post)
+	{
+		FileConfiguration conf = getConfig();
+		conf.set("Post", post);
+		setpost(post);
+		save(conf);
+	}
+
 	public void setSID(String sid)
 	{
 		this.sid = sid;
 	}
-	
-	public void setName(String name)
+
+	public void setname(String name)
 	{
 		this.name = name;
 	}
-	
-	public void setprice(String price)
+
+	public void setprice(int price)
 	{
 		this.price = price;
 	}
-	
-	public void setminprice(String minp)
-	{
-		this.minp = minp;
-	}
-	
-	public void setmaxprice(String maxp)
-	{
-		this.maxp = maxp;
-	}
-	
+
 	public void setpoint(int point)
 	{
 		this.point = point;
 	}
-	
+
+	public void setpost(String post)
+	{
+		this.post = post;
+	}
+
+	public void setGUIItem(String item)
+	{
+		this.GUIitem = item;
+	}
+
 	public String getSID()
 	{
 		return this.sid;
 	}
-	
+
 	public String getName()
 	{
 		return this.name;
 	}
-	
-	
-	public String getprice()
+
+
+	public int getprice()
 	{
 		return this.price;
 	}
-	
-	public String getminp()
-	{
-		return this.minp;
-	}
-	
-	public String getmaxp()
-	{
-		return this.maxp;
-	}
-	
+
 	public int getpoint()
 	{
 		return this.point;
 	}
-	
-	public static void setupgoods (Player player, String koueki)
+
+	public String getpost()
 	{
+		return this.post;
+	}
+
+	public String getGUIItem()
+	{
+		return this.GUIitem;
+	}
+
+	private void save(FileConfiguration conf)
+	{
+		try
+		{
+			conf.save(getFile());
+		}
+		catch(IOException e)
+		{
+			Process.getMain().getLogger().warning(Koueki.LoggerPrefix + "コンフィグファイルの保存に失敗しました。" + this.sid);
+		}
 	}
 }
