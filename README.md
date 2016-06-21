@@ -1,9 +1,9 @@
 # koueki
 My source is poop.
 
-I love Frandre very much.
-I love Chino very much.
-Let's do hshs with me.
+I'm garbage of society.
+But I don't feel sad.
+Because I have many friends the other display side.
 
 In Japanse "trade" is called "Koueki."
 I'm not good at programing.
