@@ -1,10 +1,11 @@
 # koueki
 My source is poop.
 
-I'm garbage of society.
+I'm waste of society.
 But I don't feel sad.
-Because I have many friends the other side of the screen.
+Because I have a wife in my screen.
 
-In Japanese "trade" is called "Koueki."
+In Japanese "trade" means "Koueki."
 I'm not good at programing.
-I started to Learn Java language on May 12.
+
+I started to learn Java language on May 12.
